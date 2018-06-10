@@ -6,7 +6,7 @@ signerpass=$(cat jarsigner.password)
 export ANDBIN=/home/xtof/softs/adt-bundle-linux-x86_64-20140702/sdk/build-tools/21.1.2/
 export ANDJAR=/home/xtof/softs/adt-bundle-linux-x86_64-20140702/sdk/platforms/android-19/android.jar
 
-export ANDBIN=/opt/android-sdk/build-tools/27.0.1/
+export ANDBIN=/opt/android-sdk/build-tools/27.0.3/
 export ANDJAR=/opt/android-sdk/platforms/android-19/android.jar
 
 rm -rf out

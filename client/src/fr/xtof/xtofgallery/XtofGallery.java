@@ -1,9 +1,21 @@
 package fr.xtof.xtofgallery;
 
-import android.support.v4.app.DialogFragment;
+import android.content.Context;
+import android.content.Intent;
 import android.support.v4.app.FragmentActivity;
 import android.widget.Toast;
-import com.loopj.android.http.*;
+import android.os.Bundle;
+import android.os.AsyncTask;
+import android.app.ProgressDialog;
+import android.provider.MediaStore;
+import android.database.Cursor;
+
+import java.net.Socket;
+import java.io.File;
+import java.io.InputStream;
+import java.io.FileInputStream;
+import java.io.OutputStream;
+import android.net.Uri;
 
 public class XtofGallery extends FragmentActivity {
     public static Context ctxt;
@@ -31,13 +43,46 @@ public class XtofGallery extends FragmentActivity {
     }
 
     private void sendPicture(Intent in) {
-        Object o = in.getExtras().get("android.intent.extra.TEXT");
-        if (o!=null) {
-            String s=(String)o;
-            main.msg("Sending"+s.length());
+        /*
+        Uri uri = (Uri)in.getParcelableExtra(Intent.EXTRA_STREAM);
+        System.out.println("DETSONFILE "+uri.toString());
+        if (uri != null && uri.toString().startsWith("file://")) {
+          String s = uri.getPath();
+          main.msg("Sending"+s.length());
+          putfile(s);
+          */
+        Uri uri = in.getData();
+        if (uri==null) {
+          Bundle bundle = in.getExtras();
+          uri = (Uri)bundle.get(Intent.EXTRA_STREAM);
+          System.out.println("DETSONURINULL "+uri);
+        }
+        {
+          /*
+          String s = uri.getPath();
+          if (s!=null) {
+            main.msg("Sending "+s);
             putfile(s);
+          } else {
+              main.msg("WARNING: nothing to share");
+          }
         } else {
-            main.msg("WARNING: nothing to share");
+          */
+          System.out.println("DETSONURIFIN "+uri);
+          String[] filePathColumn = { MediaStore.Images.Media.DATA };
+          // Get the cursor
+          Cursor cursor = getContentResolver().query(uri, filePathColumn, null, null, null);
+          // Move to first row
+          cursor.moveToFirst();
+          int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+          String s = cursor.getString(columnIndex);
+          cursor.close();
+          if (s!=null) {
+            main.msg("Sending Photo "+s);
+            putfile(s);
+          } else {
+              main.msg("WARNING: cant get photo");
+          }
         }
     }
 
@@ -70,22 +115,26 @@ public class XtofGallery extends FragmentActivity {
         }
 
         private void connect() {
-          Socket socket = new Socket(tgt, port);
-          File file = new File(f);
-          // Get the size of the file
-          long length = file.length();
-          byte[] bytes = new byte[16 * 1024];
-          InputStream in = new FileInputStream(file);
-          OutputStream out = socket.getOutputStream();
+          try {
+            Socket socket = new Socket(tgt, port);
+            File file = new File(imgfich);
+            // Get the size of the file
+            long length = file.length();
+            byte[] bytes = new byte[16 * 1024];
+            InputStream in = new FileInputStream(file);
+            OutputStream out = socket.getOutputStream();
 
-          int count;
-          while ((count = in.read(bytes)) > 0) {
-              out.write(bytes, 0, count);
+            int count;
+            while ((count = in.read(bytes)) > 0) {
+                out.write(bytes, 0, count);
+            }
+
+            out.close();
+            in.close();
+            socket.close();
+          } catch (Exception e) {
+            main.msg("error "+e.toString());
           }
-
-          out.close();
-          in.close();
-          socket.close();
         }
 
         /** progress dialog to show user that the backup is processing. */
@@ -112,6 +161,7 @@ public class XtofGallery extends FragmentActivity {
             }
 
             if (success) {
+                main.msg("Photo transferred !");
             } else {
                 main.msg("Error postexec");
             }
